@@ -35,10 +35,12 @@ def get_lock(process_name):
 get_lock("4g_monitor_lock")
 
 # ID unique pour Windows (permet d'avoir sa propre icone dans la barre des taches)
-myappid = 'mycompany.myproduct.subproduct.version' 
+# ID unique dynamique basé sur le nom du fichier pour éviter les conflits d'icônes entre apps
+script_name = os.path.splitext(os.path.basename(__file__))[0]
+myappid = f'obat.{script_name}.v1' 
 try:
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-except:
+except Exception:
     pass
 
 class App(ctk.CTk):
@@ -74,24 +76,9 @@ class App(ctk.CTk):
         except Exception:
             pass
 
-        # Méthode 2: Image photo (plus fiable pour la barre des taches parfois)
-        try:
-            # On cherche logo.ico ou logo.png
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-            img_path = os.path.join(base_dir, "logo.ico")
-            
-            # Si on a un png, c'est encore mieux pour iconphoto
-            png_path = os.path.join(base_dir, "logo.png")
-            if os.path.exists(png_path):
-                img_path = png_path
-            
-            if os.path.exists(img_path):
-                image = Image.open(img_path)
-                photo = ImageTk.PhotoImage(image)
-                self.wm_iconphoto(True, photo)
-        except Exception as e:
-            # On écrit silencieusement l'erreur si besoin dans un fichier, ou on ignore
-            pass
+        # Méthode 2: Supprimée pour éviter les conflits. 
+        # L'association AppUserModelID + iconbitmap est la solution robuste.
+        pass
 
         # Titre
         self.label_title = ctk.CTkLabel(self, text="SUIVI DATA 4G", font=("Roboto Medium", 16))
