@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+data_usage.json
+debug_icon.txt
+4G Monitor.lnk
+Sans titre-1.png
+Thumbs.db
+.DS_Store
