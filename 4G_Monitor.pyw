@@ -127,6 +127,19 @@ class App(ctk.CTk):
         self.update_thread.start()
         
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+        # Fix pour Window Manager / Restoration externe
+        # Force le redessin et la taille quand la fenêtre est "Mappée"
+        def on_restore(event):
+            if event.widget == self:
+                # On réimpose la taille fixe pour éviter le bug de la fenêtre minuscule
+                self.geometry("300x530")
+                self.minsize(300, 530)
+                self.maxsize(300, 530) # On verrouille aussi le max
+                self.update_idletasks()
+                self.deiconify()
+        
+        self.bind("<Map>", on_restore)
         
     def toggle_topmost(self):
         # Inverse l'état
@@ -249,7 +262,7 @@ class App(ctk.CTk):
         
         dialog = ctk.CTkToplevel(self)
         dialog.title("Réglages")
-        dialog.geometry("300x450")
+        dialog.geometry("300x500")
         
         # Fonction pour appliquer le dark mode à la barre de titre
         def apply_dark_title_bar(window):
@@ -297,6 +310,30 @@ class App(ctk.CTk):
         entry_day.insert(0, str(self.tracker.data["reset_day"]))
         entry_day.pack(pady=5)
         
+        # SÉLECTEUR D'INTERFACE RÉSEAU
+        ctk.CTkLabel(dialog, text="Interface Réseau :").pack(pady=5)
+        
+        # Récupérer les noms des interfaces
+        # On ajoute une option "Toutes" par défaut
+        interfaces_list = ["Toutes (Global)"]
+        try:
+            stats = psutil.net_if_stats()
+            # On peut filtrer celles qui sont "up" si on veut, mais mieux vaut toutes les montrer
+            # pour éviter qu'une interface débranchée disparaisse de la config
+            interfaces_list.extend(list(stats.keys()))
+        except:
+            pass
+            
+        combo_iface = ctk.CTkComboBox(dialog, values=interfaces_list, width=200)
+        
+        current_selection = self.tracker.data.get("selected_interface")
+        if current_selection and current_selection in interfaces_list:
+            combo_iface.set(current_selection)
+        else:
+            combo_iface.set("Toutes (Global)")
+            
+        combo_iface.pack(pady=5)
+        
         # Checkbox Démarrage Auto
         self.check_var = ctk.BooleanVar(value=self.is_startup_enabled())
         check_startup = ctk.CTkCheckBox(dialog, text="Lancer au démarrage de Windows", 
@@ -316,7 +353,12 @@ class App(ctk.CTk):
                 if entry_offset.get().strip():
                     off = float(entry_offset.get())
                 
-                self.tracker.set_config(lim, day, off)
+                # Gestion de l'interface
+                selected = combo_iface.get()
+                if selected == "Toutes (Global)":
+                    selected = None
+                
+                self.tracker.set_config(lim, day, off, selected)
                 on_dialog_close() # Utiliser la fermeture propre
             except ValueError:
                 pass
