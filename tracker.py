@@ -22,7 +22,8 @@ class DataTracker:
             "last_save_time": time.time(),
             "offset_usage": 0.0,
             "cycle_month": datetime.now().month,
-            "selected_interface": None # None = Global (Legacy behavior)
+            "selected_interface": None, # None = Global (Legacy behavior)
+            "topmost_enabled": True
         }
 
         if os.path.exists(DATA_FILE):

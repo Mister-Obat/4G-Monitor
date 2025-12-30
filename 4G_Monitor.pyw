@@ -8,6 +8,7 @@ import ctypes
 from PIL import Image, ImageTk
 import socket
 import psutil
+import webbrowser
 
 # Configuration de l'apparence
 ctk.set_appearance_mode("Dark")
@@ -57,7 +58,7 @@ class App(ctk.CTk):
         self.resizable(False, False)
         
         # État par défaut du TopMost
-        self.topmost_enabled = True
+        self.topmost_enabled = self.tracker.data.get("topmost_enabled", True)
         self.attributes('-topmost', self.topmost_enabled)
         
         # Gestion robuste de l'icône avec délai pour s'assurer qu'elle s'applique
@@ -65,7 +66,7 @@ class App(ctk.CTk):
 
         # Grille
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
+        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7), weight=1)
 
     def set_icon(self):
         # Méthode 1: .ico classique
@@ -116,11 +117,18 @@ class App(ctk.CTk):
         # Switch TopMost
         self.switch_topmost = ctk.CTkSwitch(self, text="Toujours au-dessus", command=self.toggle_topmost)
         self.switch_topmost.grid(row=5, column=0, padx=20, pady=5)
-        self.switch_topmost.select() # Activé par défaut
+        if self.topmost_enabled:
+            self.switch_topmost.select()
+        else:
+            self.switch_topmost.deselect()
 
         # Bouton Paramètres
         self.btn_settings = ctk.CTkButton(self, text="Paramètres", command=self.open_settings, height=30)
-        self.btn_settings.grid(row=6, column=0, padx=20, pady=(10, 20))
+        self.btn_settings.grid(row=6, column=0, padx=20, pady=(10, 5))
+
+        # Bouton Donation
+        self.btn_donate = ctk.CTkButton(self, text="Faire un don", command=self.open_donation, height=30, fg_color="#8E44AD", hover_color="#732d91")
+        self.btn_donate.grid(row=7, column=0, padx=20, pady=(5, 20))
 
         # Lancer le thread de mise à jour
         self.update_thread = threading.Thread(target=self.update_loop, daemon=True)
@@ -140,6 +148,9 @@ class App(ctk.CTk):
                 self.deiconify()
         
         self.bind("<Map>", on_restore)
+
+    def open_donation(self):
+        webbrowser.open("https://www.paypal.com/paypalme/creaprisme")
         
     def toggle_topmost(self):
         # Inverse l'état
@@ -149,6 +160,10 @@ class App(ctk.CTk):
             self.topmost_enabled = False
         
         self.attributes('-topmost', self.topmost_enabled)
+        
+        # Sauvegarde de la préférence
+        self.tracker.data["topmost_enabled"] = self.topmost_enabled
+        self.tracker.save_data()
 
     def update_loop(self):
         # On initialise les compteurs pour le calcul de vitesse
